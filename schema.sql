@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `activityLog`(
 CREATE TABLE IF NOT EXISTS `USERS`(
 	`Userid` int(5) AUTO_INCREMENT,
 	`Username` varchar(25),
-	`Password` varchar(41),
+	`Password` varchar(33),
 	`Name` varchar(40),
 	
 	UNIQUE (Username),
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `JSEDUCATIONALATTAINMENT`(
 CREATE TABLE IF NOT EXISTS `JOBSKILLSETREQ`(
 
 	`Jobid` int(5),
-	`Skillsetreq` varchar(50),
+	`Skillsetreq` varchar(50),	
 	
 	FOREIGN KEY (Jobid) REFERENCES JOB(Jobid) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -184,50 +184,55 @@ DELIMITER %%
 			END;
 %%
 -------------PROCEDURES-------------------
-----CREATE USER(JOBSEEKER/COMPANY REP)------
-	CREATE PROCEDURE jsInsertLog(in uname varchar(25), in pword varchar(41), in jsName varchar(40), in jsAge int(2))
+	CREATE PROCEDURE userInsertLog(in uname varchar(25), in pword varchar(41), in uName varchar(40))
 		BEGIN
-			INSERT INTO USERS(Username, Password, Name) VALUES(uname, password(pword), jsName);
+			INSERT INTO USERS(Username, Password, Name) VALUES(uname, md5(pword), uName);
+		END;
+		
+%%
+
+	CREATE PROCEDURE AddEmail(in jsEmailAd varchar(31))
+		BEGIN
+		
+			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsEmailAd);
+		
+		END;
+
+%%
+	CREATE PROCEDURE AddCNumber(in jsContactnumber varchar(16))
+		BEGIN
+		
+			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsContactnumber);
 			
-			INSERT INTO JOBSEEKER(Userid, Age) VALUES((select Userid from USERS where Username = uname), jsAge);
-			
+		END;
+
+%%
+----CREATE USER(JOBSEEKER/COMPANY REP)------
+	CREATE PROCEDURE jsInsertLog(in jsAge int(2))
+		BEGIN	
+			INSERT INTO JOBSEEKER(Userid, Age) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsAge);
 		END;
 		
 %% 
 	
-	CREATE PROCEDURE jsAddAddress(in Usid int(5), in jsAddress varchar(100))
+	CREATE PROCEDURE jsAddAddress(in jsAddress varchar(100))
 		BEGIN
-			INSERT INTO JOBSEEKERADDRESS(Userid, Address) VALUES(Usid, jsAddress);
+			INSERT INTO JOBSEEKERADDRESS(Userid, Address) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsAddress);
 		END;
 %%
 	
-	CREATE PROCEDURE jsAddEmail(in Usid int(5), in jsEmailAd varchar(31))
-		BEGIN
-		
-			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES(Usid, jsEmailAd);
-		
-		END;
 
-%%
-	CREATE PROCEDURE jsAddCNumber(in Usid int(5), in jsContactnumber varchar(16))
+	CREATE PROCEDURE jsAddSkillSet(in jsSkillset varchar(16))
 		BEGIN
 		
-			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
-			
-		END;
-
-%%
-	CREATE PROCEDURE jsAddSkillSet(in Usid int(5),  in jsSkillset varchar(16))
-		BEGIN
-		
-			INSERT INTO JOBSEEKERSKILLSET(Userid, Skillset) VALUES(Usid, jsSkillset);
+			INSERT INTO JOBSEEKERSKILLSET(Userid, Skillset) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsSkillset);
 	
 		END;
 		
 %%
-	CREATE PROCEDURE jsAddEduc(in Usid int(5), in jsEducAtt varchar(50))
+	CREATE PROCEDURE jsAddEduc(in jsEducAtt varchar(50))
 		BEGIN
-		INSERT INTO JSEDUCATIONALATTAINMENT(Userid, EducationalAttainment) VALUES(Usid, jsEducAtt);
+		INSERT INTO JSEDUCATIONALATTAINMENT(Userid, EducationalAttainment) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsEducAtt);
 		END;
 
 %%
@@ -248,7 +253,7 @@ DELIMITER %%
 ----UPDATE JOBSEEKER--------
 	CREATE PROCEDURE jsUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in jsName varchar(40), in jsAge int(2))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User: ", uname),concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Age From JOBSEEKER where Userid = Usid)), concat(uname, "-", password(pword), "-",jsName, "-",jsAge));
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User: ", uname),concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Age From JOBSEEKER where Userid = Usid)), concat(uname, "-", md5(pword), "-",jsName, "-",jsAge));
 			
 			UPDATE USERS SET Password = password(pword), Name = jsName, Username = uname where Userid = Usid;
 			UPDATE JOBSEEKER SET Age = jsAge where Userid = Usid;
@@ -257,31 +262,13 @@ DELIMITER %%
 -----------------------------------------------------------
 -----------------------------------------------------------
 ------------COMPANY REP-------------
-	CREATE PROCEDURE cInsertLog(in uname varchar(25), in pword varchar(41), in cName varchar(40), in cPrivilege varchar(100), in cCompanyname varchar(41))
+	CREATE PROCEDURE cInsertLog(in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
-			INSERT INTO USERS(Username, Password, Name) VALUES(uname, password(pword), cName);
-			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Username = uname), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
+			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Username = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
 			
 		END;
 %%
 
-	CREATE PROCEDURE cAddEmail(in Usid int(5), in jsEmailAd varchar(31))
-		BEGIN
-		
-			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES(Usid, jsEmailAd);
-		
-		END;
-
-%%
-
-	CREATE PROCEDURE cAddCNumber(in Usid int(5), in jsContactnumber varchar(16))
-		BEGIN
-		
-			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
-			
-		END;
-
-%%
 ----DELETE COMPANY REP -----
 	CREATE PROCEDURE cDeleteLog(in Usid int(5))
 		BEGIN
@@ -296,7 +283,7 @@ DELIMITER %%
 -----UPDATE COMPANY REP-------
 	CREATE PROCEDURE cUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in cName varchar(40), in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(uname, "-",pword, "-",cName, "-",cPrivilege, "-",cCompanyname));
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(uname, "-",md5(pword), "-",cName, "-",cPrivilege, "-",cCompanyname));
 			
 			
 			UPDATE USERS SET Password = password(pword), Name = cName, Username = uname where Userid = Usid;
