@@ -4,7 +4,7 @@
 # ========================= IMPORTS ========================= #
 import pymysql as mariadb
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from MainWindow import Ui_MainWindow as mainWindow
 from addCompany import Ui_Dialog as addCompany
 from editUser import Ui_Dialog as editUser
@@ -49,7 +49,6 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.logout_2.clicked.connect(lambda:self.index.setCurrentIndex(0))
         self.switchFun.clicked.connect(lambda:self.index.setCurrentIndex(3))
         self.addcompany.clicked.connect(lambda:self.create_add_company())
-        self.addJobPost.clicked.connect(lambda:self.create_add_job())
         self.searchJob.clicked.connect(lambda:self.stackedWidget.setCurrentIndex(1))
         self.viewJobsApplied.clicked.connect(lambda:self.stackedWidget.setCurrentIndex(0))
         self.editAcc.clicked.connect(lambda: self.create_edit_self())
@@ -129,7 +128,6 @@ class main_window(QtGui.QMainWindow, mainWindow):
             if not self.compRepCheck.isChecked():
                 self.frame_3.hide()
                 
-            #cursor.execute("call 
                 
             self.index.setCurrentIndex(2)
     
@@ -171,10 +169,17 @@ class add_company(QtGui.QDialog, addCompany):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
+        self.setupButtons()
         self.mainWindow = None
         
     def set_main(self, mainwindow):
         self.mainWindow = mainwindow
+    
+    
+    def setupButtons(self):
+        self.pushButton.clicked.connect(lambda:self.insertInput(self.listWidget, "Company Address"))
+        self.pushButton_2.clicked.connect(lambda:self.removeInput(self.listWidget))
+        
     
     def accept(self):
         #add new company here
@@ -183,19 +188,32 @@ class add_company(QtGui.QDialog, addCompany):
         self.mainWindow.update_company_list()
         super(add_company, self).accept()
 
+    def removeInput(self, listView):
+        listView.takeItem(listView.currentRow())
+        
+    def insertInput(self, listView, stringRep):
+        string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
+        if ok:
+            listView.addItem(string)
 # ============================================================= #
 
 class add_job(QtGui.QDialog, addJob):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
-        
+        self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
+    
     def accept(self):
-        #add new job here
-        print "Under Construction" 
+        jobTitle = "%s" % self.jobTitleBox.text()
+        industry = "%s" % self.IndustryBox.text()
+        level = "%s" % self.LevelBox.text()
+        temp = ("%s" % self.dateTimeEdit.dateTime().toString()).split()
+        date_time = temp[4] + "-" + temp[1] + "-" + temp[2] + " " + temp[3]
+        age = self.spinBox.value()
+         
         super(add_job, self).accept()
 
-
+            
 # ============================================================= #
 
 class edit_user(QtGui.QDialog, editUser):
@@ -210,10 +228,10 @@ class edit_user(QtGui.QDialog, editUser):
         self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
         self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds))
         self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
-        self.removeSkill.clicked.connect(lambda:removeInput(self.skillList))
-        self.removeAddress.clicked.connect(lambda:removeInput(self.addressList))
+        self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList))
+        self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList))
         self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
-        self.removeEduc.clicked.connect(lambda:removeInput(self.educList))
+        self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList))
         self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
         
     def insertInput(self, listView, stringRep):
