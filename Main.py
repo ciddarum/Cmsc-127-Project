@@ -124,7 +124,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         usern = "%s" % user
         passw = "%s" % password
         try:
-            cursor.execute("SELECT * FROM USER WHERE Username = %s AND Password = password(%s)"
+            cursor.execute("SELECT * FROM USERS WHERE Username = %s AND Password = password(%s)"
                             ,(usern, passw))
         except:
             print "Error in selection"
@@ -221,7 +221,7 @@ def initializeCursor(user, password, database):
 #main function
 if __name__ == '__main__':
     import sys
-    cursor = initializeCursor("ciddarum", "admin", "JobFinder")
+    cursor = initializeCursor("project127", "password", "JobFinder")
     app = QtGui.QApplication(sys.argv)
     #MainWindow = QtGui.QMainWindow()
     window = main_window()

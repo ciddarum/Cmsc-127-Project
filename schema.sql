@@ -1,4 +1,8 @@
+DROP  USER "project127"@"localhost";
 
+CREATE USER "project127"@"localhost" identified by "password";
+
+GRANT ALL PRIVILEGES ON JobFinder.* to "project127"@"localhost";
 
 DROP DATABASE IF EXISTS `JobFinder`;
 
@@ -9,14 +13,17 @@ USE `JobFinder`;
 CREATE TABLE IF NOT EXISTS `activityLog`(
 
 	`activitytime` timestamp default now(),
-	`activity` varchar(50)
-
+	`activity` text,
+	`OldValue` text DEFAULT NULL,
+	`NewValue` text DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS `USER`(
+
+CREATE TABLE IF NOT EXISTS `USERS`(
 	`Userid` int(5) AUTO_INCREMENT,
 	`Username` varchar(25),
 	`Password` varchar(41),
+	`Name` varchar(40),
 	
 	UNIQUE (Username),
 	constraint USER_Userid_pk primary key(Userid)
@@ -24,27 +31,28 @@ CREATE TABLE IF NOT EXISTS `USER`(
 
 
 CREATE TABLE IF NOT EXISTS `JOBSEEKER`(
-	`Userid` int(5) AUTO_INCREMENT,
+	`Userid` int(5),
 	`Age` int(2),
 	
-	FOREIGN KEY(Userid) REFERENCES USER(Userid)
+	FOREIGN KEY(Userid) REFERENCES USERS(Userid)
 );
 
 CREATE TABLE IF NOT EXISTS `COMPANY`(
 	`Companyid` int(5) AUTO_INCREMENT,
-	`Details` varchar(25),
 	`Companyname` varchar(41),
+	`Details` varchar(25),
 	
 	PRIMARY KEY(Companyid)
 );
 
 CREATE TABLE IF NOT EXISTS `COMPANYREP`(
-	`Userid` int(5) AUTO_INCREMENT,
-	`Priviledge` int(2),
-	`Companyid` int(5),
+	`Userid` int(5),
+	`Privilege` varchar(100),
+	`Companyid` int(5) default NULL,
+	`Companyname` varchar(41),
 	
-	FOREIGN KEY(Userid) REFERENCES USER(Userid),
-	FOREIGN KEY(Companyid) REFERENCES COMPANY(Companyid)
+	FOREIGN KEY(Userid) REFERENCES USERS(Userid) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY(Companyid) REFERENCES COMPANY(Companyid) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -54,15 +62,15 @@ CREATE TABLE IF NOT EXISTS `JOB`(
 	`Industry` varchar(50),
 	`Jobtitle` varchar(50),
 	`Agerequirement` int(2),
-	`Level` varchar(25),
+	`JLevel` varchar(25),
 	`Salary` varchar(50),
 	`Dateposted` datetime default current_timestamp on update current_timestamp,
-	`Enddate` datetime default current_timestamp on update current_timestamp,
+	`Enddate` datetime,
 	`Status` varchar(10),
 	`Userid` int(5),
 	
 	PRIMARY KEY(Jobid),
-	FOREIGN KEY(Userid) REFERENCES USER(Userid)
+	FOREIGN KEY(Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 
 );
 
@@ -72,8 +80,7 @@ CREATE TABLE IF NOT EXISTS `USERCONTACTNUMBER`(
 	`Userid` int(5),
 	`ContactNumber` varchar(16),
 	
-	primary key(ContactNumber),
-	FOREIGN KEY (Userid) REFERENCES USER(Userid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `USEREMAILADDRESS`(
@@ -81,8 +88,7 @@ CREATE TABLE IF NOT EXISTS `USEREMAILADDRESS`(
 	`Userid` int(5),
 	`Emailaddress` varchar(31),
 	
-	primary key(Emailaddress),
-	FOREIGN KEY (Userid) REFERENCES USER(Userid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `APPLIES`(
@@ -91,8 +97,8 @@ CREATE TABLE IF NOT EXISTS `APPLIES`(
 	`Jobid` int(5),
 	`Dateapplied` varchar(16),
 	
-	FOREIGN KEY (Userid) REFERENCES USER(Userid),
-	FOREIGN KEY(Jobid) REFERENCES JOB(Jobid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY(Jobid) REFERENCES JOB(Jobid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `JOBSEEKERSKILLSET`(
@@ -100,110 +106,302 @@ CREATE TABLE IF NOT EXISTS `JOBSEEKERSKILLSET`(
 	`Userid` int(5),
 	`Skillset` varchar(16),
 	
-	FOREIGN KEY (Userid) REFERENCES JOBSEEKER(Userid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `JOBSEEKERADDRESS`(
 
 	`Userid` int(5),
-	`Address` varchar(16),
+	`Address` varchar(100),
 	
-	FOREIGN KEY (Userid) REFERENCES JOBSEEKER(Userid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `COMPANYADDRESS`(
 
 	`Companyid` int(5),
-	`Address` varchar(16),
+	`Address` varchar(100),
 	
-	FOREIGN KEY (Companyid) REFERENCES COMPANY(Companyid)
+	FOREIGN KEY (Companyid) REFERENCES COMPANY(Companyid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `JSEDUCATIONALATTAINMENT`(
 
 	`Userid` int(5),
-	`EducationalAttainment` varchar(16),
+	`EducationalAttainment` varchar(50),
 	
-	FOREIGN KEY (Userid) REFERENCES JOBSEEKER(Userid)
+	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `JOBSKILLSETREQ`(
 
 	`Jobid` int(5),
-	`Skillsetreq` varchar(16),
+	`Skillsetreq` varchar(50),
 	
-	FOREIGN KEY (Jobid) REFERENCES JOB(Jobid)
+	FOREIGN KEY (Jobid) REFERENCES JOB(Jobid) ON DELETE SET CASCADE ON UPDATE CASCADE
 );
 
 
 DELIMITER %%
+-------------TRIGGERS----------------
+	CREATE TRIGGER userInsert AFTER INSERT ON USERS
+		FOR EACH ROW
+			BEGIN
+				INSERT INTO activityLog(activity, NewValue) VALUES("Inserted New User", NEW.Username);
+			END;
+			
+%%
 
-	CREATE trigger userInsertLog after insert on `USER`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Inserted new User');
-		 	
-		 	end;
+	CREATE TRIGGER userDelete AFTER DELETE ON USERS
+		FOR EACH ROW
+			BEGIN
+				INSERT INTO activityLog(activity, OldValue) VALUES("Deleted a User", OLD.Username);
+			END;
+			
 %%
-	CREATE trigger userDeleteLog after delete on `USER`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Deleted a User');
-		 	
-		 	end;
+	CREATE TRIGGER jobInsert AFTER INSERT ON JOB
+		FOR EACH ROW
+			BEGIN
+				INSERT INTO activityLog(activity, NewValue) VALUES("Created New Job", NEW.Jobtitle);
+			END;
 %%
-	CREATE trigger userUpdateLog after update on `USER`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Updated a User');
-		 	
-		 	end;
+	CREATE TRIGGER jobDelete AFTER DELETE ON JOB
+		FOR EACH ROW
+			BEGIN
+				INSERT INTO activityLog(activity, OldValue) VALUES("Deleted a Job", OLD.Jobtitle);
+			END;
 %%
-	CREATE trigger jobInsertLog after insert on `JOB`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Inserted new Job');
-		 	
-		 	end;
-%%		
-	CREATE trigger jobDeleteLog after delete on `JOB`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Deleted a Job');
-		 	
-		 	end;
+	CREATE TRIGGER companyInsert AFTER INSERT ON COMPANY
+		FOR EACH ROW 
+			BEGIN
+				INSERT INTO activityLog(activity, NewValue) VALUES("Inserted New Company", NEW.Companyname);
+			END;
 %%
-	CREATE trigger jobUpdateLog after update on `JOB`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Updated a Job');
-		 	end;
-		 	
-%% 
-	CREATE trigger companyInsertLog after insert on `COMPANY`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Inserted new Company');
-		 	
-		 	end;
+	CREATE TRIGGER companyDelete AFTER DELETE ON COMPANY
+		FOR EACH ROW
+			BEGIN
+				INSERT INTO activityLog(activity, OldValue) VALUES("Deleted a Company", OLD.Companyname);
+			END;
 %%
-	CREATE trigger companyDeleteLog after delete on `COMPANY`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Deleted a Company');
-		 	
-		 	end;
-%%
-	CREATE trigger companyUpdateLog after update on `COMPANY`
-		 for each row
-		 	begin
-		 	insert into activityLog(activity) values('Updated a Company');
-		 	end;
-%%
+-------------PROCEDURES-------------------
+----CREATE USER(JOBSEEKER/COMPANY REP)------
+	CREATE PROCEDURE jsInsertLog(in uname varchar(25), in pword varchar(41), in jsName varchar(40), in jsAge int(2))
+		BEGIN
+			INSERT INTO USERS(Username, Password, Name) VALUES(uname, password(pword), jsName);
+			
+			INSERT INTO JOBSEEKER(Userid, Age) VALUES((select Userid from USERS where Username = uname), jsAge);
+			
+		END;
 		
+%% 
+	
+	CREATE PROCEDURE jsAddAddress(in Usid int(5), in jsAddress varchar(100))
+		BEGIN
+			INSERT INTO JOBSEEKERADDRESS(Userid, Address) VALUES(Usid, jsAddress);
+		END;
+%%
+	
+	CREATE PROCEDURE jsAddEmail(in Usid int(5), in jsEmailAd varchar(31))
+		BEGIN
+		
+			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES(Usid, jsEmailAd);
+		
+		END;
+
+%%
+	CREATE PROCEDURE jsAddCNumber(in Usid int(5), in jsContactnumber varchar(16))
+		BEGIN
+		
+			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
+			
+		END;
+
+%%
+	CREATE PROCEDURE jsAddSkillSet(in Usid int(5),  in jsSkillset varchar(16))
+		BEGIN
+		
+			INSERT INTO JOBSEEKERSKILLSET(Userid, Skillset) VALUES(Usid, jsSkillset);
+	
+		END;
+		
+%%
+	CREATE PROCEDURE jsAddEduc(in Usid int(5), in jsEducAtt varchar(50))
+		BEGIN
+		INSERT INTO JSEDUCATIONALATTAINMENT(Userid, EducationalAttainment) VALUES(Usid, jsEducAtt);
+		END;
+
+%%
+---DELETE JOBSEEKER----
+	CREATE PROCEDURE jsDeleteLog(in Usid int(5))
+		BEGIN
+			
+			DELETE FROM USERCONTACTNUMBER where Userid = Usid;
+			DELETE FROM USEREMAILADDRESS where Userid = Usid;
+			DELETE FROM JOBSEEKER where Userid = Usid;
+			DELETE FROM JOBSEEKERSKILLSET where Userid = Usid;
+			DELETE FROM JOBSEEKERADDRESS where Userid = Usid;
+			DELETE FROM JSEDUCATIONALATTAINMENT where Userid = Usid;
+			DELETE FROM USERS where Userid = Usid;
+		END;
+		
+%%
+----UPDATE JOBSEEKER--------
+	CREATE PROCEDURE jsUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in jsName varchar(40), in jsAge int(2))
+		BEGIN
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User: ", uname),concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Age From JOBSEEKER where Userid = Usid)), concat(uname, "-", password(pword), "-",jsName, "-",jsAge));
+			
+			UPDATE USERS SET Password = password(pword), Name = jsName, Username = uname where Userid = Usid;
+			UPDATE JOBSEEKER SET Age = jsAge where Userid = Usid;
+		END;
+%%
+-----------------------------------------------------------
+-----------------------------------------------------------
+------------COMPANY REP-------------
+	CREATE PROCEDURE cInsertLog(in uname varchar(25), in pword varchar(41), in cName varchar(40), in cPrivilege varchar(100), in cCompanyname varchar(41))
+		BEGIN
+			INSERT INTO USERS(Username, Password, Name) VALUES(uname, password(pword), cName);
+			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Username = uname), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
+			
+		END;
+%%
+
+	CREATE PROCEDURE cAddEmail(in Usid int(5), in jsEmailAd varchar(31))
+		BEGIN
+		
+			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES(Usid, jsEmailAd);
+		
+		END;
+
+%%
+
+	CREATE PROCEDURE cAddCNumber(in Usid int(5), in jsContactnumber varchar(16))
+		BEGIN
+		
+			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
+			
+		END;
+
+%%
+----DELETE COMPANY REP -----
+	CREATE PROCEDURE cDeleteLog(in Usid int(5))
+		BEGIN
+			DELETE FROM USERS where Userid = Usid;
+			DELETE FROM USERCONTACTNUMBER where Userid = Usid;
+			DELETE FROM USEREMAILADDRESS where Userid = Usid;
+			DELETE FROM COMPANYREP where Userid =Usid;
+			
+		END;
+		
+%%
+-----UPDATE COMPANY REP-------
+	CREATE PROCEDURE cUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in cName varchar(40), in cPrivilege varchar(100), in cCompanyname varchar(41))
+		BEGIN
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(uname, "-",pword, "-",cName, "-",cPrivilege, "-",cCompanyname));
+			
+			
+			UPDATE USERS SET Password = password(pword), Name = cName, Username = uname where Userid = Usid;
+			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname), Companyname = cCompanyname where Userid = Usid;
+		END;
+	
+		
+%% ---JOB ACTIVITY LOG---
+
+	CREATE PROCEDURE jobInsertLog(in ind varchar(50), in jTitle varchar(50), in areq int(2), in lev varchar(20), in sal varchar(50), in edate datetime, in status varchar(10), in uname varchar(25))
+		BEGIN
+			INSERT INTO JOB(Industry, Jobtitle, Agerequirement, JLevel, Salary, Enddate, Status, Userid) VALUES(ind, jTitle, areq, lev, sal, edate, status, (select Userid from USERS where Username = uname));
+			
+		END;
+		
+%%
+	CREATE PROCEDURE jobAddSkillSet(in job_id int(5), in jTitle varchar(50))
+		BEGIN
+			INSERT INTO JOBSKILLSETREQ(Jobid, Skillsetreq) VALUES((Select Jobid from JOB where Jobid = job_id and Jobtitle = jTitle), jobSkillReq);
+		END;	
+%%
+	
+	CREATE PROCEDURE jobDeleteLog(in job_id int(5), in jTitle varchar(50))
+		BEGIN
+			DELETE FROM JOB where Jobtitle = jTitle and Jobid = job_id;
+			DELETE FROM JOBSKILLSETREQ WHERE Jobid = job_id;
+		END;
+		
+%%
+
+	CREATE PROCEDURE jobUpdateLog(in job_id int(5), in ind varchar(50), in jTitle varchar(50), in areq int(2), in lev varchar(20), in sal varchar(50), in edate datetime, in status varchar(10))
+		BEGIN
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Job Requirements of: ", (select Jobtitle from JOB where Jobid = job_id)), concat((select Industry from JOB where Jobid = job_id), "-", (select Jobtitle from JOB where Jobid = job_id), "-",(select Agerequirement from JOB where Jobid = job_id), "-",(select JLevel from JOB where Jobid = job_id), "-",(select Salary from JOB where Jobid = job_id), "-",(select Enddate from JOB where Jobid = job_id), "-",(select Status from JOB where Jobid = job_id)),concat(ind , "-", jTitle, "-",areq, "-",lev, "-",sal, "-",edate, "-",status));
+			
+			UPDATE JOB SET Industry = ind, Jobtitle = jTitle, Agerequirement = areq, JOB.JLevel = lev, Salary = sal, Enddate = edate, Status = status where JOB.Jobid = job_id;
+		END;
+		
+%%----COMPANY LOG-----
+	CREATE PROCEDURE companyInsertLog(in cname varchar(41), in dtails varchar(25))
+		BEGIN
+			INSERT INTO COMPANY(Companyname, Details) VALUES(cname, dtails);
+		END;
+		
+%%
+	CREATE PROCEDURE compAddAddress(in cid int(5), in compAddress varchar(100))
+		BEGIN
+			INSERT INTO COMPANYADDRESS(Companyid, Address) VALUES(cid, compAddress);
+		END;
+%%
+
+
+	CREATE PROCEDURE companyDeleteLog(in cid int(5))
+		BEGIN
+			DELETE FROM COMPANY where Companyid = cid;
+			DELETE FROM COMPANYADDRESS WHERE Companyid = cid;
+		END;
+		
+%%
+
+	CREATE PROCEDURE companyUpdateLog(in cid int(5), in cname varchar(41), in dtails varchar(25), in compAddress varchar(100))
+		BEGIN
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company: ", cname), concat((select Companyname from COMPANY where Companyid = cid), "-",(select Details from COMPANY where Companyid = cid)), concat( cname, "-",dtails));
+			
+			UPDATE COMPANY SET Companyname = cname, Details = dtails where Companyid = cid;
+		END;
+
+%%
+--------Print Procedure---------
+--------Print JOBSEEKER---------
+	CREATE PROCEDURE jsPrint(in jsId int(5))
+		BEGIN
+			SELECT A.Userid, A.Username, A.Password, A.Name, B.ContactNumber, C.Emailaddress, JSA.Address, JSSS.Skillset, JSEA.EducationalAttainment From USERS AS A JOIN USERCONTACTNUMBER AS B JOIN USEREMAILADDRESS AS C JOIN JOBSEEKERADDRESS AS JSA JOIN JOBSEEKERSKILLSET AS JSSS JOIN JSEDUCATIONALATTAINMENT AS JSEA ON (A.Userid = jsId) and A.Userid = B.Userid and (A.Userid = C.Userid) and A.Userid = JSA.Userid and A.Userid = JSSS.Userid and A.Userid = JSEA.Userid;
+		END;	
+%%
+	CREATE PROCEDURE jsPrintAll()
+		BEGIN
+			SELECT A.Userid, A.Username, A.Password, A.Name, B.ContactNumber, C.Emailaddress, JSA.Address, JSSS.Skillset, JSEA.EducationalAttainment From USERS AS A JOIN USERCONTACTNUMBER AS B JOIN USEREMAILADDRESS AS C JOIN JOBSEEKERADDRESS AS JSA JOIN JOBSEEKERSKILLSET AS JSSS JOIN JSEDUCATIONALATTAINMENT AS JSEA ON (A.Userid = B.Userid) and (A.Userid = C.Userid) and (A.Userid = JSA.Userid) and (A.Userid = JSSS.Userid) and (A.Userid = JSEA.Userid);
+		END;
+		
+%%
+------COMPANY REP-------
+	CREATE PROCEDURE compRepPrint(in cid int(5))
+		BEGIN
+			SELECT A.Userid, A.Username, A.Password, A.Name, B.ContactNumber, C.Emailaddress, CREP.Privilege, CREP.Companyid, CREP.Companyname From USERS AS A JOIN USERCONTACTNUMBER AS B JOIN USEREMAILADDRESS AS C JOIN COMPANYREP AS CREP ON (A.Userid = cid) and A.Userid = B.Userid and (A.Userid = C.Userid) and A.Userid = CREP.Userid;
+		END;
+		
+%%
+	CREATE PROCEDURE compRepPrintAll()
+		BEGIN
+			SELECT A.Userid, A.Username, A.Password, A.Name, B.ContactNumber, C.Emailaddress, CREP.Privilege, CREP.Companyid, CREP.Companyname From USERS AS A JOIN USERCONTACTNUMBER AS B JOIN USEREMAILADDRESS AS C JOIN COMPANYREP AS CREP ON A.Userid = B.Userid and (A.Userid = C.Userid) and A.Userid = CREP.Userid;
+		END;
+		
+%%
+------COMPANY----------
+	CREATE PROCEDURE cPrint(in compId int(5))
+		BEGIN
+			SELECT A.Companyid, A.Companyname, A.Details, B.Address FROM COMPANY AS A JOIN COMPANYADDRESS AS B ON (A.Companyid = compId) and A.Companyid = B.Companyid;
+		
+		END;
+%%		
+	CREATE PROCEDURE cPrintAll()
+		BEGIN
+			SELECT A.Companyid, A.Companyname, A.Details, B.Address FROM COMPANY AS A JOIN COMPANYADDRESS AS B ON A.Companyid = B.Companyid;
+
+		END;
+%%
+
 DELIMITER ;
-
-
-
-
-
