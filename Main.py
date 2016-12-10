@@ -7,6 +7,7 @@ import pymysql as mariadb
 from PyQt4 import QtGui
 from MainWindow import Ui_MainWindow as mainWindow
 from addCompany import Ui_Dialog as addCompany
+from editUser import Ui_Dialog as editUser
 from addJob import Ui_Dialog as addJob
 
 # ========================= CLASSES ========================= #
@@ -34,12 +35,12 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
         self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds))
         self.nextCreate.clicked.connect(lambda:self.nextCreator())
-        self.addSkill.clicked.connect(lambda:insertInput(self.skillList,"Skill"))
+        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
         self.removeSkill.clicked.connect(lambda:removeInput(self.skillList))
         self.removeAddress.clicked.connect(lambda:removeInput(self.addressList))
-        self.addAddress.clicked.connect(lambda:insertInput(self.addressList,"Address"))
+        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
         self.removeEduc.clicked.connect(lambda:removeInput(self.educList))
-        self.addEduc.clicked.connect(lambda:insertInput(self.educList,"Educational attainment"))
+        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
         self.createUser.clicked.connect(lambda:self.newLogin())
         self.logout.clicked.connect(lambda:self.index.setCurrentIndex(0))
         self.switchFunc.clicked.connect(lambda:self.index.setCurrentIndex(4))
@@ -70,8 +71,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.job_window.show()
         
     def create_edit_self(self):
-        #create edit profile window here
-        print "Under Construction"
+        self.edit_user_window = edit_user(self)
+        self.edit_user_window.show()
         
         
     def search(self):
@@ -93,6 +94,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         
     def newLogin(self):
         #add new user here then log them in
+        print "Under Construction"
         self.index.setCurrentIndex(4)
 
     def activateSwitch(self, activate):
@@ -129,6 +131,9 @@ class main_window(QtGui.QMainWindow, mainWindow):
             
         if cursor.rowcount == 1:
             #add the tables here too
+            for i in cursor:
+                for key in i:
+                    print key, i[key]
             page = 3
             self.currentUser = cursor.fetchone()["Userid"]
             cursor.execute("SELECT * FROM JOBSEEKER WHERE UserId = %s"
@@ -157,6 +162,7 @@ class add_company(QtGui.QDialog, addCompany):
         
     def accept(self):
         #add new company here
+        print "Under Construction" 
         super(add_company, self).accept()
 
 # ============================================================= #
@@ -168,9 +174,41 @@ class add_job(QtGui.QDialog, addJob):
         
     def accept(self):
         #add new job here
+        print "Under Construction" 
         super(add_job, self).accept()
 
 
+# ============================================================= #
+
+class edit_user(QtGui.QDialog, editUser):
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.setupUi(self)
+        self.setUpButtons()
+        
+    def setUpButtons(self):
+        self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number"))
+        self.removePhoneNumber.clicked.connect(lambda:self.removeInput(self.phoneNumbers))
+        self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
+        self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds))
+        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
+        self.removeSkill.clicked.connect(lambda:removeInput(self.skillList))
+        self.removeAddress.clicked.connect(lambda:removeInput(self.addressList))
+        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
+        self.removeEduc.clicked.connect(lambda:removeInput(self.educList))
+        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
+        
+    def insertInput(self, listView, stringRep):
+        string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
+        if ok:
+            listView.addItem(string)
+            
+    def removeInput(self, listView):
+        listView.takeItem(listView.currentRow())
+    def accept(self):
+        #update user here
+        print "Under Construction" 
+        super(edit_user, self).accept()
 
 # ========================= FUNCTIONS ========================= #
 def initializeCursor(user, password, database):
