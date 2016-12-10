@@ -19,6 +19,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.currentUser = None
         self.setupUi(self)
         self.passBox.setEchoMode(QtGui.QLineEdit.Password)
+        self.createPassBox.setEchoMode(QtGui.QLineEdit.Password)
+        self.update_company_list()
         self.setup_buttons()
         
     def setup_buttons(self):
@@ -64,6 +66,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         
     def create_add_company(self):       
         self.company_window = add_company(self)
+        self.company_window.set_main(self)
         self.company_window.show()
         
     def create_add_job(self):       
@@ -78,7 +81,6 @@ class main_window(QtGui.QMainWindow, mainWindow):
     def search(self):
         print "Under Construction"    
     
-        
     def add_job_applied(self):
         print "Under Construction"
         
@@ -91,6 +93,11 @@ class main_window(QtGui.QMainWindow, mainWindow):
     def edit_job_posted(self):
         print "Under Construction"
         
+    def update_company_list(self):
+        self.companyList.clear()
+        cursor.execute("SELECT Companyname FROM COMPANY")
+        for company in cursor:
+            self.companyList.addItem(company["Companyname"])
         
     def newLogin(self):
         #add new user here then log them in
@@ -104,13 +111,16 @@ class main_window(QtGui.QMainWindow, mainWindow):
         else:
             self.switchFun.hide()
             self.switchFunc.hide()
-            
+    
     def nextCreator(self):
         ok = True
-        #check if username already exists
-        print self.compRepCheck.isChecked(), " ", self.seekerCheck.isChecked()
+        cursor.execute("SELECT * FROM USERS WHERE Username = %s",("%s" % self.createUserBox.text()))
+        if cursor.rowcount == 1:
+            ok = False
         
-        if not self.compRepCheck.isChecked() and not self.seekerCheck.isChecked():
+        if (not self.compRepCheck.isChecked() and not self.seekerCheck.isChecked()) \
+            or ("%s" % self.createUserBox.text() == "" or "%s" % self.createPassBox.text() == "" \
+            or "%s" % self.lNameBox.text() == "" or "%s" % self.fNameBox.text() == ""):
             ok = False
             
         if ok == True:
@@ -118,6 +128,9 @@ class main_window(QtGui.QMainWindow, mainWindow):
                 self.frame.hide()
             if not self.compRepCheck.isChecked():
                 self.frame_3.hide()
+                
+            #cursor.execute("call 
+                
             self.index.setCurrentIndex(2)
     
     def loginClick(self, index, cursor, user, password):
@@ -158,11 +171,16 @@ class add_company(QtGui.QDialog, addCompany):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
+        self.mainWindow = None
         
-        
+    def set_main(self, mainwindow):
+        self.mainWindow = mainwindow
+    
     def accept(self):
         #add new company here
-        print "Under Construction" 
+        cursor.execute("call companyInsertLog(%s, %s)", ("%s" % self.lineEdit.text(), "%s" % self.textEdit.toPlainText()))
+        mariadb.commit()
+        self.mainWindow.update_company_list()
         super(add_company, self).accept()
 
 # ============================================================= #
@@ -212,16 +230,17 @@ class edit_user(QtGui.QDialog, editUser):
 
 # ========================= FUNCTIONS ========================= #
 def initializeCursor(user, password, database):
-    return mariadb.connect( user = user,
+    conn = mariadb.connect( user = user,
                             password = password,
                             database = database
-    ).cursor(mariadb.cursors.DictCursor)
+    )
+    return (conn, conn.cursor(mariadb.cursors.DictCursor))
 
 
 #main function
 if __name__ == '__main__':
     import sys
-    cursor = initializeCursor("project127", "password", "JobFinder")
+    (mariadb, cursor) = initializeCursor("project127", "password", "JobFinder")
     app = QtGui.QApplication(sys.argv)
     #MainWindow = QtGui.QMainWindow()
     window = main_window()
