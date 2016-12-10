@@ -22,6 +22,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.createPassBox.setEchoMode(QtGui.QLineEdit.Password)
         self.update_company_list()
         self.setup_buttons()
+        self.seeker = False
+        self.compRep = False
         
     def setup_buttons(self):
         self.login.clicked.connect(
@@ -101,6 +103,27 @@ class main_window(QtGui.QMainWindow, mainWindow):
     def newLogin(self):
         #add new user here then log them in
         print "Under Construction"
+        if self.seeker:
+            cursor.execute("call jsInsertLog(%s)", ("%s" % self.spinBox.value()))
+            
+            for i in range(self.skillList.count()):
+                cursor.execute("call jsAddSkillSet(%s)",("%s" % self.skillList.item(i).text()))
+            for i in range(self.addressList.count()):
+                cursor.execute("call jsAddAddress(%s)",("%s" % self.addressList.item(i).text()))
+            for i in range(self.educList.count()):
+                cursor.execute("call jsAddEduc(%s)",("%s" % self.educList.item(i).text()))
+            
+        if self.compRep:
+            privilage = ""
+            if self.addPriv.isChecked():
+                privilage = privilage + "+|"
+            if self.delPriv.isChecked():
+                privilage = privilage + "-|"
+            if self.editPriv.isChecked():
+                privilage = privilage + "~"
+        
+            cursor.execute("call cInsertLog(%s,%s)", (privilage, "%s" % self.companyList.currentText()))
+        
         mariadb.commit()
         self.index.setCurrentIndex(4)
 
@@ -167,7 +190,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             if cursor.rowcount == 1: 
                 self.compRep = True
                 
-            if not (compRep and seeker):
+            if not (self.compRep and self.seeker):
                 self.activateSwitch(False)
                 
             index.setCurrentIndex(page)

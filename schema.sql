@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS `COMPANYREP`(
 	`Companyid` int(5) default NULL,
 	`Companyname` varchar(41),
 	
+	UNIQUE (Companyname),
 	FOREIGN KEY(Userid) REFERENCES USERS(Userid) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(Companyid) REFERENCES COMPANY(Companyid) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -264,7 +265,7 @@ DELIMITER %%
 ------------COMPANY REP-------------
 	CREATE PROCEDURE cInsertLog(in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
-			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Username = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
+			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
 			
 		END;
 %%
