@@ -184,9 +184,9 @@ DELIMITER %%
 			END;
 %%
 -------------PROCEDURES-------------------
-	CREATE PROCEDURE userInsertLog(in uname varchar(25), in pword varchar(41), in uName varchar(40))
+	CREATE PROCEDURE userInsertLog(in uname varchar(25), in pword varchar(41), in userName varchar(40))
 		BEGIN
-			INSERT INTO USERS(Username, Password, Name) VALUES(uname, md5(pword), uName);
+			INSERT INTO USERS(Username, Password, Name) VALUES(uname, md5(pword), userName);
 		END;
 		
 %%
@@ -328,9 +328,9 @@ DELIMITER %%
 		END;
 		
 %%
-	CREATE PROCEDURE compAddAddress(in cid int(5), in compAddress varchar(100))
+	CREATE PROCEDURE compAddAddress(in compAddress varchar(100))
 		BEGIN
-			INSERT INTO COMPANYADDRESS(Companyid, Address) VALUES(cid, compAddress);
+			INSERT INTO COMPANYADDRESS(Companyid, Address) VALUES((select Companyid from COMPANY where Companyid = LAST_INSERT_ID()), compAddress);
 		END;
 %%
 
