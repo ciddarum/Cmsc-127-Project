@@ -128,28 +128,25 @@ class main_window(QtGui.QMainWindow, mainWindow):
                 self.frame.hide()
             if not self.compRepCheck.isChecked():
                 self.frame_3.hide()
-                
-            #cursor.execute("call 
-                
+            name = "%s" % self.fNameBox.text() + " " + "%s" % self.miBox.text() + " " + "%s" % self.lNameBox.text()
+            cursor.execute("call userInsertLog(%s, %s, %s)", ("%s" % self.createUserBox.text(), "%s" % self.createPassBox.text(), "%s" % name)) 
+            mariadb.commit()
             self.index.setCurrentIndex(2)
     
     def loginClick(self, index, cursor, user, password):
         usern = "%s" % user
         passw = "%s" % password
         try:
-            cursor.execute("SELECT * FROM USERS WHERE Username = %s AND Password = password(%s)"
+            cursor.execute("SELECT * FROM USERS WHERE Username = %s AND Password = md5(%s)"
                             ,(usern, passw))
         except:
             print "Error in selection"
             
         if cursor.rowcount == 1:
             #add the tables here too
-            for i in cursor:
-                for key in i:
-                    print key, i[key]
             page = 3
-            self.currentUser = cursor.fetchone()["Userid"]
-            cursor.execute("SELECT * FROM JOBSEEKER WHERE UserId = %s"
+            self.currentUser = cursor.fetchone()["Userid"]	
+            cursor.execute("SELECT * FROM JOBSEEKER WHERE Userid = %s"
                             ,(self.currentUser))
             if cursor.rowcount == 1: 
                 page = 4
