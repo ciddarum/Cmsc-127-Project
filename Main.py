@@ -126,7 +126,12 @@ class main_window(QtGui.QMainWindow, mainWindow):
             
         
     def remove_job_applied(self):
-        print "Under Construction"
+        indexes = self.tableOfJobs.selectionModel().selectedRows()
+        print indexes
+        for index in sorted(indexes):
+            cursor.execute("DELETE FROM APPLIES WHERE Userid = %s AND Jobid = %s", (self.currentUser, "%s" % self.tableOfJobs.item(index.row(), 6).text()))
+        mariadb.commit()
+        self.update_job_list()
         
     def remove_job_posted(self):
         reply = QtGui.QMessageBox.question(self, "Confirm?", \
