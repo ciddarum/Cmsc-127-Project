@@ -487,7 +487,7 @@ class edit_user(QtGui.QDialog, editUser):
         
     def accept(self):
         #commit changes and save changed values
-        name = self.fNameBox.text() + " " + self.miBox.text() + ". "  + self.lNameBox.text()
+        name = self.fNameBox.text() + " " + self.miBox.text() + " "  + self.lNameBox.text()
         cursor.execute("call updateUser(%s, %s, %s, %s)", ("%s" % self.currentUser, "%s" % self.createUserBox.text(), "%s" % self.createPassBox.text(), "%s" % name))
         
         mariadb.commit()
