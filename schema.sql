@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `APPLIES`(
 
 	`Userid` int(5),
 	`Jobid` int(5),
-	`Dateapplied` varchar(16),
+	`Dateapplied` datetime default current_timestamp on update current_timestamp,
 	
 	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(Jobid) REFERENCES JOB(Jobid) ON DELETE CASCADE ON UPDATE CASCADE
@@ -188,7 +188,7 @@ DELIMITER %%
 		END;
 		
 %%
-
+	
 	CREATE PROCEDURE AddEmail(in jsEmailAd varchar(31))
 		BEGIN
 		
@@ -387,6 +387,14 @@ DELIMITER %%
 			UPDATE COMPANY SET Companyname = cname, Details = dtails where Companyid = cid;
 		END;
 
+%%
+
+	CREATE PROCEDURE apply (in Usid int(5), in job_id int(5))
+		BEGIN
+			INSERT INTO activityLog(activity) VALUES(concat(Usid, " applied for ", job_id));
+		
+			INSERT INTO APPLIES(Userid, Jobid) VALUES(Usid, job_id);
+		END;
 %%
 	CREATE PROCEDURE jsPrint(in jsId int(5))
 		BEGIN
