@@ -199,6 +199,12 @@ DELIMITER %%
 		END;
 
 %%
+	CREATE PROCEDURE AddEmailId(in Usid int(5), in jsEmailAd varchar(31))
+		BEGIN
+			INSERT INTO USEREMAILADDRESS(Userid, Emailaddress) VALUES(Usid, jsEmailAd);
+		END;
+%%
+
 	CREATE PROCEDURE AddCNumber(in jsContactnumber varchar(16))
 		BEGIN
 		
@@ -207,6 +213,12 @@ DELIMITER %%
 		END;
 
 %%
+	CREATE PROCEDURE AddCNumberId(in Usid int(5), in jsContactnumber varchar(16))
+		BEGIN
+			INSERT INTO USEREMAILADDRESS(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
+		END;
+%%
+
 ----CREATE USER(JOBSEEKER/COMPANY REP)------
 	CREATE PROCEDURE jsInsertLog(in jsAge int(2))
 		BEGIN	
@@ -220,6 +232,12 @@ DELIMITER %%
 			INSERT INTO JOBSEEKERADDRESS(Userid, Address) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsAddress);
 		END;
 %%
+
+	CREATE PROCEDURE jsAddAddressId(in Usid int(5), in jsAddress varchar(100))
+		BEGIN
+			INSERT INTO JOBSEEKERADDRESS(Userid, Address) VALUES(Usid, jsAddress);
+		END;
+%%
 	
 
 	CREATE PROCEDURE jsAddSkillSet(in jsSkillset varchar(16))
@@ -230,9 +248,23 @@ DELIMITER %%
 		END;
 		
 %%
+	CREATE PROCEDURE jsAddSkillSetId(in Usid int(5), in jsSkillset varchar(16))
+		BEGIN
+		
+			INSERT INTO JOBSEEKERSKILLSET(Userid, Skillset) VALUES(Usid, jsSkillset);
+	
+		END;
+		
+%%
 	CREATE PROCEDURE jsAddEduc(in jsEducAtt varchar(50))
 		BEGIN
 		INSERT INTO JSEDUCATIONALATTAINMENT(Userid, EducationalAttainment) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsEducAtt);
+		END;
+
+%%
+	CREATE PROCEDURE jsAddEducId(in Usid int(5), in jsEducAtt varchar(50))
+		BEGIN
+		INSERT INTO JSEDUCATIONALATTAINMENT(Userid, EducationalAttainment) VALUES(Usid, jsEducAtt);
 		END;
 
 %%
@@ -293,9 +325,9 @@ DELIMITER %%
 		
 %% ---JOB ACTIVITY LOG---
 
-	CREATE PROCEDURE jobInsertLog(in ind varchar(50), in jTitle varchar(50), in areq int(2), in lev varchar(20), in sal varchar(50), in edate datetime, in status varchar(10), in uname varchar(25))
+	CREATE PROCEDURE jobInsertLog(in ind varchar(50), in jTitle varchar(50), in areq int(2), in lev varchar(20), in sal varchar(50), in edate datetime, in status varchar(10), in Userid int(5))
 		BEGIN
-			INSERT INTO JOB(Industry, Jobtitle, Agerequirement, JLevel, Salary, Enddate, Status, Userid) VALUES(ind, jTitle, areq, lev, sal, edate, status, (select Userid from USERS where Username = uname));
+			INSERT INTO JOB(Industry, Jobtitle, Agerequirement, JLevel, Salary, Enddate, Status, Userid) VALUES(ind, jTitle, areq, lev, sal, edate, status, Userid);
 			
 		END;
 		
@@ -333,7 +365,11 @@ DELIMITER %%
 			INSERT INTO COMPANYADDRESS(Companyid, Address) VALUES((select Companyid from COMPANY where Companyid = LAST_INSERT_ID()), compAddress);
 		END;
 %%
-
+	CREATE PROCEDURE compAddAddressId(in cid int(5), in compAddress varchar(100))
+		BEGIN
+			INSERT INTO COMPANYADDRESS(Companyid, Address) VALUES(cid, compAddress);
+		END;
+%%
 
 	CREATE PROCEDURE companyDeleteLog(in cid int(5))
 		BEGIN

@@ -208,10 +208,13 @@ class add_job(QtGui.QDialog, addJob):
         jobTitle = "%s" % self.jobTitleBox.text()
         industry = "%s" % self.IndustryBox.text()
         level = "%s" % self.LevelBox.text()
+        salary = "%s" % self.SalaryBox.text()
         temp = ("%s" % self.dateTimeEdit.dateTime().toString()).split()
         date_time = temp[4] + "-" + temp[1] + "-" + temp[2] + " " + temp[3]
         age = self.spinBox.value()
          
+        cursor.execute("call jobInsertLog(%s, %s, %s, %s, %s, %s, 'Accepting', %s)", ("%s" % industry, "%s" % jobTitle, "%s" % age, "%s" % level, "%s" % salary,  "%s" % date_time, "%s" % self.currentUser))
+     
         super(add_job, self).accept()
 
             
