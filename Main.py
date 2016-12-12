@@ -22,6 +22,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.createPassBox.setEchoMode(QtGui.QLineEdit.Password)
         self.update_company_list()
         self.setup_buttons()
+        self.seeker = False
+        self.compRep = False
         
     def setup_buttons(self):
         self.login.clicked.connect(
@@ -38,10 +40,10 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds))
         self.nextCreate.clicked.connect(lambda:self.nextCreator())
         self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
-        self.removeSkill.clicked.connect(lambda:removeInput(self.skillList))
-        self.removeAddress.clicked.connect(lambda:removeInput(self.addressList))
+        self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList))
+        self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList))
         self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
-        self.removeEduc.clicked.connect(lambda:removeInput(self.educList))
+        self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList))
         self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
         self.createUser.clicked.connect(lambda:self.newLogin())
         self.logout.clicked.connect(lambda:self.index.setCurrentIndex(0))
@@ -101,6 +103,27 @@ class main_window(QtGui.QMainWindow, mainWindow):
     def newLogin(self):
         #add new user here then log them in
         print "Under Construction"
+        if self.seeker:
+            cursor.execute("call jsInsertLog(%s)", ("%s" % self.spinBox.value()))
+            
+            for i in range(self.skillList.count()):
+                cursor.execute("call jsAddSkillSet(%s)",("%s" % self.skillList.item(i).text()))
+            for i in range(self.addressList.count()):
+                cursor.execute("call jsAddAddress(%s)",("%s" % self.addressList.item(i).text()))
+            for i in range(self.educList.count()):
+                cursor.execute("call jsAddEduc(%s)",("%s" % self.educList.item(i).text()))
+            
+        if self.compRep:
+            privilage = ""
+            if self.addPriv.isChecked():
+                privilage = privilage + "+|"
+            if self.delPriv.isChecked():
+                privilage = privilage + "-|"
+            if self.editPriv.isChecked():
+                privilage = privilage + "~"
+        
+            cursor.execute("call cInsertLog(%s,%s)", (privilage, "%s" % self.companyList.currentText()))
+        
         mariadb.commit()
         self.index.setCurrentIndex(4)
 
@@ -117,21 +140,29 @@ class main_window(QtGui.QMainWindow, mainWindow):
         cursor.execute("SELECT * FROM USERS WHERE Username = %s",("%s" % self.createUserBox.text()))
         if cursor.rowcount == 1:
             ok = False
-        
+            
         if (not self.compRepCheck.isChecked() and not self.seekerCheck.isChecked()) \
             or ("%s" % self.createUserBox.text() == "" or "%s" % self.createPassBox.text() == "" \
             or "%s" % self.lNameBox.text() == "" or "%s" % self.fNameBox.text() == ""):
             ok = False
-            
+        self.seeker = True
+        self.compRep = True
         if ok == True:
             if not self.seekerCheck.isChecked():
+                self.seeker = False
                 self.frame.hide()
             if not self.compRepCheck.isChecked():
+                self.compRep = False
                 self.frame_3.hide()
                 
+            print self.createUserBox.text(), self.createPassBox.text()
             name = "%s" % self.fNameBox.text() + " " + "%s" % self.miBox.text() + " " + "%s" % self.lNameBox.text()
             cursor.execute("call userInsertLog(%s, %s, %s)", ("%s" % self.createUserBox.text(), "%s" % self.createPassBox.text(), "%s" % name)) 
             
+            for i in range(self.phoneNumbers.count()):
+                cursor.execute("call AddCNumber(%s)",("%s" % self.phoneNumbers.item(i).text()))
+            for i in range(self.emailAdds.count()):
+                cursor.execute("call AddEmail(%s)",("%s" % self.emailAdds.item(i).text()))
             
             self.index.setCurrentIndex(2)
     
@@ -151,7 +182,16 @@ class main_window(QtGui.QMainWindow, mainWindow):
             cursor.execute("SELECT * FROM JOBSEEKER WHERE Userid = %s"
                             ,(self.currentUser))
             if cursor.rowcount == 1: 
+                self.seeker = True
                 page = 4
+                
+            cursor.execute("SELECT * FROM COMPANYREP WHERE Userid = %s"
+                            ,(self.currentUser))
+            if cursor.rowcount == 1: 
+                self.compRep = True
+                
+            if not (self.compRep and self.seeker):
+                self.activateSwitch(False)
                 
             index.setCurrentIndex(page)
 
@@ -187,6 +227,9 @@ class add_company(QtGui.QDialog, addCompany):
         cursor.execute("call companyInsertLog(%s, %s)", ("%s" % self.lineEdit.text(), "%s" % self.textEdit.toPlainText()))
         mariadb.commit()
         self.mainWindow.update_company_list()
+        for i in range(self.listWidget.count()):
+            cursor.execute("call compAddAddress(%s)",("%s" % self.listWidget.item(i).text()))
+        
         super(add_company, self).accept()
 
     def removeInput(self, listView):
