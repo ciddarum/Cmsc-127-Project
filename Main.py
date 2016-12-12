@@ -20,6 +20,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.setupUi(self)
         self.passBox.setEchoMode(QtGui.QLineEdit.Password)
         self.createPassBox.setEchoMode(QtGui.QLineEdit.Password)
+        self.index.setCurrentIndex(0)
         self.update_company_list()
         self.setup_buttons()
         self.seeker = False
@@ -60,8 +61,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.editButton.clicked.connect(lambda: self.create_edit_self())
         self.viewJobsPosted.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(0))
         self.searchJobs_2.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(1))
-        self.searchButton.clicked.connect(lambda:self.search())
-        self.searchButton_2.clicked.connect(lambda:self.search())
+        self.searchButton.clicked.connect(lambda:self.search(self.jobList, self.searchBy, self.searchBox))
+        self.searchButton_2.clicked.connect(lambda:self.search(self.jobList_2, self.searchBy_2, self.searchBox_2))
         
         
     def create_add_company(self):       
@@ -80,8 +81,14 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.edit_user_window.show()
         
         
-    def search(self, table, value, attribute):
-        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " = %s", (value))
+    def search(self, listView, comboBox, textBox):
+        listView.clear()
+        attribute = "%s" % comboBox.currentText()
+        value = "%s" % textBox.text()
+        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " SOUNDS LIKE %s AND Status = \"OPEN\"", (value))
+
+        for i in cursor:
+            listView.addItem(i["Jobtitle"])
         #try this
     
     def add_job_applied(self):
@@ -262,11 +269,9 @@ class add_company(QtGui.QDialog, addCompany):
     def set_main(self, mainwindow):
         self.mainWindow = mainwindow
     
-    
     def setupButtons(self):
         self.pushButton.clicked.connect(lambda:self.insertInput(self.listWidget, "Company Address"))
         self.pushButton_2.clicked.connect(lambda:self.removeInput(self.listWidget))
-        
     
     def accept(self):
         #add new company here
