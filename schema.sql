@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `APPLIES`(
 
 	`Userid` int(5),
 	`Jobid` int(5),
-	`Dateapplied` varchar(16),
+	`Dateapplied` datetime default current_timestamp on update current_timestamp,
 	
 	FOREIGN KEY (Userid) REFERENCES USERS(Userid) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(Jobid) REFERENCES JOB(Jobid) ON DELETE CASCADE ON UPDATE CASCADE
@@ -188,7 +188,7 @@ DELIMITER %%
 		END;
 		
 %%
-
+	
 	CREATE PROCEDURE AddEmail(in jsEmailAd varchar(31))
 		BEGIN
 		
@@ -295,7 +295,7 @@ DELIMITER %%
 %%
 	CREATE PROCEDURE jsUpdateAge(in Usid int(5), in jsAge int(2))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User ", uname, "  - Age"),(select Age From JOBSEEKER where Userid = Usid), jsAge);
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User ", jsAge, "  - Age"),(select Age From JOBSEEKER where Userid = Usid), jsAge);
 			
 			UPDATE JOBSEEKER SET Age = jsAge where Userid = Usid;
 		END;
@@ -321,7 +321,7 @@ DELIMITER %%
 		BEGIN
 			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(cPrivilege, "-",cCompanyname));
 			
-			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname), Companyname = cCompanyname where Userid = Usid;
+			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname LIMIT 1), Companyname = cCompanyname where Userid = Usid;
 		END;
 
 %%
@@ -387,6 +387,14 @@ DELIMITER %%
 			UPDATE COMPANY SET Companyname = cname, Details = dtails where Companyid = cid;
 		END;
 
+%%
+
+	CREATE PROCEDURE apply (in Usid int(5), in job_id int(5))
+		BEGIN
+			INSERT INTO activityLog(activity) VALUES(concat(Usid, " applied for ", job_id));
+		
+			INSERT INTO APPLIES(Userid, Jobid) VALUES(Usid, job_id);
+		END;
 %%
 	CREATE PROCEDURE jsPrint(in jsId int(5))
 		BEGIN

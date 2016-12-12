@@ -488,8 +488,20 @@ class edit_user(QtGui.QDialog, editUser):
     def accept(self):
         #commit changes and save changed values
         name = self.fNameBox.text() + " " + self.miBox.text() + " "  + self.lNameBox.text()
-        cursor.execute("call updateUser(%s, %s, %s, %s)", ("%s" % self.currentUser, "%s" % self.createUserBox.text(), "%s" % self.createPassBox.text(), "%s" % name))
-        
+        apass = "%s" % self.createPassBox.text()
+        if apass != "":
+            cursor.execute("call updateUser(%s, %s, %s, %s)", ("%s" % self.currentUser, "%s" % self.createUserBox.text(),apass , "%s" % name))
+        if self.isSeeker:
+            cursor.execute("call jsUpdateAge(%s, %s)", (self.currentUser, "%s" % self.spinBox.value()))
+        if self.isCompRep:
+            privilage = ""
+            if self.addPriv.isChecked():
+                privilage = privilage + "+|"
+            if self.delPriv.isChecked():
+                privilage = privilage + "-|"
+            if self.editPriv.isChecked():
+                privilage = privilage + "~"
+            cursor.execute("call cUpdateLog(%s, %s, %s)",(self.currentUser, privilage, "%s" % self.companyList.currentText()))
         mariadb.commit()
         super(edit_user, self).accept()
 
