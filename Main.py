@@ -28,7 +28,6 @@ class main_window(QtGui.QMainWindow, mainWindow):
     def setup_buttons(self):
         self.login.clicked.connect(
             lambda:self.loginClick(
-                                self.index, cursor, 
                                 self.userBox.text(), 
                                 self.passBox.text()
             )
@@ -56,7 +55,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.editAcc.clicked.connect(lambda: self.create_edit_self())
         self.removeApplied.clicked.connect(lambda: self.remove_job_applied())
         self.addJobPost.clicked.connect(lambda:self.create_add_job())
-        self.removeJobPost.clicked.connect(lambda:self.remove_job_applied())
+        self.removeJobPost.clicked.connect(lambda:self.remove_job_posted())
         self.editJobPost.clicked.connect(lambda:self.edit_job_posted())
         self.editButton.clicked.connect(lambda: self.create_edit_self())
         self.viewJobsPosted.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(0))
@@ -72,15 +71,18 @@ class main_window(QtGui.QMainWindow, mainWindow):
         
     def create_add_job(self):       
         self.job_window = add_job(self)
+        self.job_window.setCurrentUser(self, self.currentUser)
         self.job_window.show()
         
     def create_edit_self(self):
         self.edit_user_window = edit_user(self)
+        self.edit_user_window.set_user(self, self.currentUser)
         self.edit_user_window.show()
         
         
-    def search(self):
-        print "Under Construction"    
+    def search(self, table, value, attribute):
+        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " = %s", (value))
+        #try this
     
     def add_job_applied(self):
         print "Under Construction"
@@ -89,7 +91,21 @@ class main_window(QtGui.QMainWindow, mainWindow):
         print "Under Construction"
         
     def remove_job_posted(self):
-        print "Under Construction"
+        reply = QtGui.QMessageBox.question(self, "Confirm?", \
+                "Are you sure?", \
+                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Yes:
+            indexes = self.jobsPostedTable.selectionModel().selectedRows()
+            for index in sorted(indexes):
+                text = "%s" % self.jobsPostedTable.item(index.row(), 6).text()
+                cursor.execute("call jobDeleteLog(%s)",(int(text)))
+                
+            i = 0
+            for index in sorted(indexes):
+                self.jobsPostedTable.removeRow(index.row() - i)
+                i += 1
+                
+            mariadb.commit()
         
     def edit_job_posted(self):
         print "Under Construction"
@@ -100,9 +116,23 @@ class main_window(QtGui.QMainWindow, mainWindow):
         for company in cursor:
             self.companyList.addItem(company["Companyname"])
         
+    def update_comp_job_list(self):
+        self.jobsPostedTable.clear()
+        self.jobsPostedTable.setRowCount(0)
+        cursor.execute("SELECT * FROM JOB WHERE Userid = %s", (self.currentUser))
+        self.jobsPostedTable.setColumnCount(10)
+        for job in cursor:
+            rowPosition = self.jobsPostedTable.rowCount()
+            self.jobsPostedTable.insertRow(rowPosition)
+            i = 0
+            for attribute in job:
+                item = QtGui.QTableWidgetItem("%s" % job[attribute])
+                self.jobsPostedTable.setItem(rowPosition , i, item)
+                i += 1
+        
+        
     def newLogin(self):
         #add new user here then log them in
-        print "Under Construction"
         if self.seeker:
             cursor.execute("call jsInsertLog(%s)", ("%s" % self.spinBox.value()))
             
@@ -125,7 +155,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             cursor.execute("call cInsertLog(%s,%s)", (privilage, "%s" % self.companyList.currentText()))
         
         mariadb.commit()
-        self.index.setCurrentIndex(4)
+        self.loginClick(self.createUserBox.text(), self.createPassBox.text())
 
     def activateSwitch(self, activate):
         if activate:
@@ -166,7 +196,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             
             self.index.setCurrentIndex(2)
     
-    def loginClick(self, index, cursor, user, password):
+    def loginClick(self, user, password):
         usern = "%s" % user
         passw = "%s" % password
         try:
@@ -177,23 +207,39 @@ class main_window(QtGui.QMainWindow, mainWindow):
             
         if cursor.rowcount == 1:
             #add the tables here too
-            page = 3
+            self.seeker = False
+            self.compRep = False
+            page = 4
             self.currentUser = cursor.fetchone()["Userid"]	
             cursor.execute("SELECT * FROM JOBSEEKER WHERE Userid = %s"
                             ,(self.currentUser))
             if cursor.rowcount == 1: 
                 self.seeker = True
-                page = 4
+                page = 3
                 
             cursor.execute("SELECT * FROM COMPANYREP WHERE Userid = %s"
                             ,(self.currentUser))
             if cursor.rowcount == 1: 
+                privs = cursor.fetchone()["Privilege"].split("|")
+                self.addJobPost.hide()
+                self.removeJobPost.hide()
+                self.editJobPost.hide()
+                for priv in privs:
+                    if priv == "+":
+                        self.addJobPost.show()
+                    if priv == "-":
+                        self.removeJobPost.show()
+                    if priv == "~":
+                        self.editJobPost.show()
+                self.update_comp_job_list()
                 self.compRep = True
                 
             if not (self.compRep and self.seeker):
                 self.activateSwitch(False)
+            else:
+                self.activateSwitch(True)
                 
-            index.setCurrentIndex(page)
+            self.index.setCurrentIndex(page)
 
 
     def insertInput(self, listView, stringRep):
@@ -232,6 +278,11 @@ class add_company(QtGui.QDialog, addCompany):
         
         super(add_company, self).accept()
 
+    def removeJob(self, listView):
+        listView.takeItem(listView.currentRow())
+        #remove job here
+        mariadb.commit()
+
     def removeInput(self, listView):
         listView.takeItem(listView.currentRow())
         
@@ -246,17 +297,41 @@ class add_job(QtGui.QDialog, addJob):
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
         self.dateTimeEdit.setDateTime(QtCore.QDateTime.currentDateTime())
+        self.setupButtons()
+        self.currentUser = None
+    
+    def setupButtons(self):
+        self.pushButton.clicked.connect(lambda: self.insertInput(self.listWidget, "Required skills"))
+        self.pushButton_2.clicked.connect(lambda: self.removeInput(self.listWidget))
+    
+    
+    def setCurrentUser(self, main, index):
+        self.mainWindow = main
+        self.currentUser = index
+    
     
     def accept(self):
         jobTitle = "%s" % self.jobTitleBox.text()
         industry = "%s" % self.IndustryBox.text()
         level = "%s" % self.LevelBox.text()
         temp = ("%s" % self.dateTimeEdit.dateTime().toString()).split()
+        salary = "%s" % self.SalaryBox.text()
         date_time = temp[4] + "-" + temp[1] + "-" + temp[2] + " " + temp[3]
         age = self.spinBox.value()
-         
+        
+        cursor.execute("call jobInsertLog(%s, %s, %s, %s, %s, str_to_date(%s, %s), %s, %s)" \
+                ,(industry, jobTitle, age, level, salary, date_time, "%Y-%b-%e %H:%i:%s", "OPEN", self.currentUser))
+        mariadb.commit()
+        self.mainWindow.update_comp_job_list()
         super(add_job, self).accept()
 
+    def removeInput(self, listView):
+        listView.takeItem(listView.currentRow())
+        
+    def insertInput(self, listView, stringRep):
+        string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
+        if ok:
+            listView.addItem(string)
             
 # ============================================================= #
 
@@ -264,30 +339,124 @@ class edit_user(QtGui.QDialog, editUser):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setupUi(self)
+        self.update_company_list()
         self.setUpButtons()
+        self.currentUser = None
+        self.isSeeker = False
+        self.isCompRep = False
         
     def setUpButtons(self):
         self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number"))
-        self.removePhoneNumber.clicked.connect(lambda:self.removeInput(self.phoneNumbers))
+        self.removePhoneNumber.clicked.connect(lambda:self.removeInput(self.phoneNumbers, "USERCONTACTNUMBER", "ContactNumber"))
         self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
-        self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds))
+        self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds, "USEREMAILADDRESS", "Emailaddress"))
         self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
-        self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList))
-        self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList))
+        self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList, "JOBSEEKERSKILLSET", "Skillset"))
+        self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList, "JOBSEEKERADDRESS", "Address"))
         self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
-        self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList))
+        self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList, "JSEDUCATIONALATTAINMENT", "EducationalAttainment"))
         self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
+        self.pushButton.clicked.connect(lambda:self.delete_user())
         
-    def insertInput(self, listView, stringRep):
+    def delete_user(self):
+        reply = QtGui.QMessageBox.question(self, "Confirm?", \
+                "Are you sure?", \
+                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Yes:
+            reply = QtGui.QMessageBox.question(self, "Confirm?", \
+                    "Are you REALLY sure?", \
+                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+            if reply == QtGui.QMessageBox.Yes:
+                if self.isSeeker:
+                    cursor.execute("call jsDeleteLog(%s)", (self.currentUser))
+                if self.isCompRep:
+                    cursor.execute("call cDeleteLog(%s)", (self.currentUser))
+                cursor.execute("call deleteUser(%s)", (self.currentUser))
+                mariadb.commit()
+                self.main.index.setCurrentIndex(0)
+                super(edit_user, self).accept()
+        
+    def set_user(self, mainWindow, userId):
+        self.currentUser = userId
+        self.main = mainWindow;
+        self.update_information()
+        
+    def insertInput(self, listView, stringRep, function, value):
+        query = "CALL " + function + "(%s, %s)"
         string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
         if ok:
+            #create procedures for user decided additions
+            #cursor.execute(query, (self.currentUser, value))
             listView.addItem(string)
+        #add new shit here
             
-    def removeInput(self, listView):
+    def update_information(self):
+        cursor.execute("SELECT * FROM USERS WHERE Userid = %s", (self.currentUser))
+        user = cursor.fetchone()
+        self.createUserBox.setText(user["Username"])
+        
+        name = user["Name"]
+        name = name.split()
+        if len(name) == 3:
+            self.fNameBox.setText(name[0])
+            self.lNameBox.setText(name[2])
+            self.miBox.setText(name[1])
+        else:
+            self.fNameBox.setText(name[0])
+            self.lNameBox.setText(name[1])
+            
+        cursor.execute("SELECT ContactNumber FROM USERCONTACTNUMBER WHERE Userid = %s", (self.currentUser))
+        for number in cursor:
+            self.phoneNumbers.addItem(number["ContactNumber"])
+            
+        cursor.execute("SELECT Emailaddress FROM USEREMAILADDRESS WHERE Userid = %s", (self.currentUser))
+        for email in cursor:
+            self.emailAdds.addItem(email["Emailaddress"])
+        
+        cursor.execute("SELECT * FROM JOBSEEKER WHERE Userid = %s", (self.currentUser))
+        if cursor.rowcount == 1:
+            self.isSeeker = True
+            cursor.execute("SELECT Skillset FROM JOBSEEKERSKILLSET WHERE Userid = %s", (self.currentUser))
+            for skill in cursor:
+                self.skillList.addItem(skill["Skillset"])
+                
+            cursor.execute("SELECT Address FROM JOBSEEKERADDRESS WHERE Userid = %s", (self.currentUser))
+            for address in cursor:
+                self.addressList.addItem(address["Address"])
+                
+            cursor.execute("SELECT EducationalAttainment FROM JSEDUCATIONALATTAINMENT WHERE Userid = %s", (self.currentUser))
+            for educ in cursor:
+                self.educList.addItem(educ["EducationalAttainment"])
+        else:
+            self.tabWidget.removeTab(1)
+            
+        cursor.execute("SELECT * FROM COMPANYREP WHERE Userid = %s", (self.currentUser))
+        if cursor.rowcount == 1:
+            self.isCompRep = True
+            index = cursor.fetchone()["Companyid"] - 1
+            print index
+            self.companyList.setCurrentIndex(index)
+        else:
+            self.tabWidget.removeTab(2)
+            
+        
+    def update_company_list(self):
+        self.companyList.clear()
+        cursor.execute("SELECT Companyname FROM COMPANY")
+        for company in cursor:
+            self.companyList.addItem(company["Companyname"])
+            
+    def removeInput(self, listView, table, attribute):
+        statement = "DELETE FROM " + table + " WHERE Userid = %s and " + attribute + " = %s"
+        cursor.execute(statement, \
+            (self.currentUser, "%s" % listView.currentItem().text()))
+        
         listView.takeItem(listView.currentRow())
+        
+        
     def accept(self):
-        #update user here
-        print "Under Construction" 
+        #commit changes and save changed values
+        mariadb.commit()
         super(edit_user, self).accept()
 
 # ========================= FUNCTIONS ========================= #
