@@ -81,14 +81,22 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.edit_user_window.show()
         
         
-    def search(self, listView, comboBox, textBox):
-        listView.clear()
+    def search(self, tableView, comboBox, textBox):
+        tableView.clear()
+        tableView.setRowCount(0)
+        tableView.setColumnCount(10)
         attribute = "%s" % comboBox.currentText()
         value = "%s" % textBox.text()
-        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " SOUNDS LIKE %s AND Status = \"OPEN\"", (value))
-
-        for i in cursor:
-            listView.addItem(i["Jobtitle"])
+        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " LIKE %s AND Status = \"Available\"", (value +"%"))
+        print "SELECT * FROM JOB WHERE " + attribute + " LIKE %s AND Status = \"OPEN\""
+        for job in cursor:
+            rowPosition = tableView.rowCount()
+            tableView.insertRow(rowPosition)
+            i = 0
+            for attribute in job:
+                item = QtGui.QTableWidgetItem("%s" % job[attribute])
+                tableView.setItem(rowPosition , i, item)
+                i += 1
         #try this
     
     def add_job_applied(self):
@@ -140,6 +148,10 @@ class main_window(QtGui.QMainWindow, mainWindow):
         
     def newLogin(self):
         #add new user here then log them in
+        cursor.execute("select LAST_INSERT_ID()");
+        temp = cursor.fetchone()
+        for i in temp:
+            print i, temp[i]
         if self.seeker:
             cursor.execute("call jsInsertLog(%s)", ("%s" % self.spinBox.value()))
             
@@ -159,7 +171,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             if self.editPriv.isChecked():
                 privilage = privilage + "~"
         
-            cursor.execute("call cInsertLog(%s,%s)", (privilage, "%s" % self.companyList.currentText()))
+            cursor.execute("call cInsertLog(%s, %s)", (privilage,"%s" % self.companyList.currentText()))
         
         mariadb.commit()
         self.loginClick(self.createUserBox.text(), self.createPassBox.text())
@@ -325,7 +337,7 @@ class add_job(QtGui.QDialog, addJob):
         age = self.spinBox.value()
         
         cursor.execute("call jobInsertLog(%s, %s, %s, %s, %s, str_to_date(%s, %s), %s, %s)" \
-                ,(industry, jobTitle, age, level, salary, date_time, "%Y-%b-%e %H:%i:%s", "OPEN", self.currentUser))
+                ,(industry, jobTitle, age, level, salary, date_time, "%Y-%b-%e %H:%i:%s", "Available", self.currentUser))
         mariadb.commit()
         self.mainWindow.update_comp_job_list()
         super(add_job, self).accept()

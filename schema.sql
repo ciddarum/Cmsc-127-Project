@@ -269,7 +269,7 @@ CREATE PROCEDURE deleteUser(in Usid int(5))
 #------------COMPANY REP-------------
 	CREATE PROCEDURE cInsertLog(in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
-			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname), cCompanyname);
+			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname LIMIT 1), cCompanyname);
 			
 		END;
 %%
