@@ -217,6 +217,16 @@ DELIMITER %%
 		END;
 %%
 
+	CREATE PROCEDURE updateUser(in Usid int(5), in uname varchar(25), in pword varchar(41), name varchar(40))
+		BEGIN
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User: ", uname),concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid)),concat(uname, "-", md5(pword), "-",name));
+			
+			UPDATE USERS SET Username = uname, Password = md5(pword), Name = name where Userid = Usid;
+		END;
+
+%%
+
+
 	CREATE PROCEDURE jsInsertLog(in jsAge int(2))
 		BEGIN	
 			INSERT INTO JOBSEEKER(Userid, Age) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), jsAge);
@@ -283,14 +293,15 @@ DELIMITER %%
 		END;
 		
 %%
-	CREATE PROCEDURE jsUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in jsName varchar(40), in jsAge int(2))
+	CREATE PROCEDURE jsUpdateAge(in Usid int(5), in jsAge int(2))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User: ", uname),concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Age From JOBSEEKER where Userid = Usid)), concat(uname, "-", md5(pword), "-",jsName, "-",jsAge));
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User ", uname, "  - Age"),(select Age From JOBSEEKER where Userid = Usid), jsAge);
 			
-			UPDATE USERS SET Password = password(pword), Name = jsName, Username = uname where Userid = Usid;
 			UPDATE JOBSEEKER SET Age = jsAge where Userid = Usid;
 		END;
+	
 %%
+	
 	CREATE PROCEDURE cInsertLog(in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
 			INSERT INTO COMPANYREP(Userid, Privilege, Companyid, Companyname) VALUES((select Userid from USERS where Userid = LAST_INSERT_ID()), cPrivilege, (select Companyid from COMPANY where Companyname = cCompanyname LIMIT 1), cCompanyname);
@@ -306,12 +317,10 @@ DELIMITER %%
 		
 %%
 
-	CREATE PROCEDURE cUpdateLog(in Usid int(5), in uname varchar(25), in pword varchar(41), in cName varchar(40), in cPrivilege varchar(100), in cCompanyname varchar(41))
+	CREATE PROCEDURE cUpdateLog(in Usid int(5), in cPrivilege varchar(100), in cCompanyname varchar(41))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Username from USERS where Userid = Usid), "-", (select Password from USERS where Userid = Usid), "-", (select Name from USERS where Userid = Usid), "-", (select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(uname, "-",md5(pword), "-",cName, "-",cPrivilege, "-",cCompanyname));
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(cPrivilege, "-",cCompanyname));
 			
-			
-			UPDATE USERS SET Password = password(pword), Name = cName, Username = uname where Userid = Usid;
 			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname), Companyname = cCompanyname where Userid = Usid;
 		END;
 
