@@ -213,7 +213,7 @@ DELIMITER %%
 %%
 	CREATE PROCEDURE AddCNumberId(in Usid int(5), in jsContactnumber varchar(16))
 		BEGIN
-			INSERT INTO USEREMAILADDRESS(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
+			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
 		END;
 %%
 
@@ -295,7 +295,7 @@ DELIMITER %%
 %%
 	CREATE PROCEDURE jsUpdateAge(in Usid int(5), in jsAge int(2))
 		BEGIN
-			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User ", uname, "  - Age"),(select Age From JOBSEEKER where Userid = Usid), jsAge);
+			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated User ", jsAge, "  - Age"),(select Age From JOBSEEKER where Userid = Usid), jsAge);
 			
 			UPDATE JOBSEEKER SET Age = jsAge where Userid = Usid;
 		END;
@@ -321,7 +321,7 @@ DELIMITER %%
 		BEGIN
 			INSERT INTO activityLog(activity, OldValue, NewValue) VALUES(concat("Updated Company Representative: ", (select Username from USERS where Userid = Usid)), concat((select Privilege from COMPANYREP where Userid = Usid), "-", (select CompanyName from COMPANYREP where Userid = Usid)), concat(cPrivilege, "-",cCompanyname));
 			
-			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname), Companyname = cCompanyname where Userid = Usid;
+			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname LIMIT 1), Companyname = cCompanyname where Userid = Usid;
 		END;
 
 %%

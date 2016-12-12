@@ -377,16 +377,16 @@ class edit_user(QtGui.QDialog, editUser):
         self.isCompRep = False
         
     def setUpButtons(self):
-        self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number"))
+        self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number", "AddCNumberId"))
         self.removePhoneNumber.clicked.connect(lambda:self.removeInput(self.phoneNumbers, "USERCONTACTNUMBER", "ContactNumber"))
-        self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
+        self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address", "AddEmailId"))
         self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds, "USEREMAILADDRESS", "Emailaddress"))
-        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
+        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill", "jsAddSkillSetId"))
         self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList, "JOBSEEKERSKILLSET", "Skillset"))
         self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList, "JOBSEEKERADDRESS", "Address"))
-        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
+        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address", "jsAddAddressId"))
         self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList, "JSEDUCATIONALATTAINMENT", "EducationalAttainment"))
-        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
+        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment", "jsAddEducId"))
         self.pushButton.clicked.connect(lambda:self.delete_user())
         
     def delete_user(self):
@@ -417,7 +417,7 @@ class edit_user(QtGui.QDialog, editUser):
         string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
         if ok:
             #create procedures for user decided additions
-            cursor.execute(query, (self.currentUser, string))
+            cursor.execute(query, (self.currentUser, "%s" % string))
             listView.addItem(string)
         #add new shit here
             
@@ -487,9 +487,21 @@ class edit_user(QtGui.QDialog, editUser):
         
     def accept(self):
         #commit changes and save changed values
-        name = self.fNameBox.text() + " " + self.miBox.text() + ". "  + self.lNameBox.text()
-        cursor.execute("call updateUser(%s, %s, %s, %s)", ("%s" % self.currentUser, "%s" % self.createUserBox.text(), "%s" % self.createPassBox.text(), "%s" % name))
-        
+        name = self.fNameBox.text() + " " + self.miBox.text() + " "  + self.lNameBox.text()
+        apass = "%s" % self.createPassBox.text()
+        if apass != "":
+            cursor.execute("call updateUser(%s, %s, %s, %s)", ("%s" % self.currentUser, "%s" % self.createUserBox.text(),apass , "%s" % name))
+        if self.isSeeker:
+            cursor.execute("call jsUpdateAge(%s, %s)", (self.currentUser, "%s" % self.spinBox.value()))
+        if self.isCompRep:
+            privilage = ""
+            if self.addPriv.isChecked():
+                privilage = privilage + "+|"
+            if self.delPriv.isChecked():
+                privilage = privilage + "-|"
+            if self.editPriv.isChecked():
+                privilage = privilage + "~"
+            cursor.execute("call cUpdateLog(%s, %s, %s)",(self.currentUser, privilage, "%s" % self.companyList.currentText()))
         mariadb.commit()
         super(edit_user, self).accept()
 
