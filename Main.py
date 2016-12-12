@@ -100,7 +100,10 @@ class main_window(QtGui.QMainWindow, mainWindow):
         #try this
     
     def add_job_applied(self):
-        cursor.execute("call APPLY(%s, %s)", (self.currentUser, "%s" % self.jobList.item(index.row(), 6).text()))
+        indexes = self.jobList.selectionModel().selectedRows()
+        for index in sorted(indexes):
+            cursor.execute("call APPLY(%s, %s)", (self.currentUser, "%s" % self.jobList.item(index.row(), 6).text()))
+        mariadb.commit()
         self.update_job_list()
         #self.jobList for the serach table
         #self.tableOfJobs for the table of applied jobs
@@ -110,7 +113,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         tableView.setRowCount(0)
         tableView.setColumnCount(10)
         
-        cursor.execute("Select * from JOB where Jobid in (Select * from APPLIES where Userid = %s)", (self.currentUser))
+        cursor.execute("Select * from JOB where Jobid in (Select Jobid from APPLIES where Userid = %s)", (self.currentUser))
         for job in cursor:
             rowPosition = tableView.rowCount()
             tableView.insertRow(rowPosition)
