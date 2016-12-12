@@ -123,7 +123,19 @@ class main_window(QtGui.QMainWindow, mainWindow):
             mariadb.commit()
         
     def edit_job_posted(self):
-        print "Under Construction"
+        reply = QtGui.QMessageBox.question(self, "Confirm Edit?", \
+                "Are you sure?", \
+                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Yes:
+            indexes = self.jobsPostedTable.selectionModel().selectedRows()
+            
+            for index in sorted(indexes):
+                items = []
+                for i in range(0, 10):
+                    items.append("%s" % self.jobsPostedTable.item(index.row(), i).text())
+                cursor.execute("call jobUpdateLog(%s, %s, %s, %s, %s, %s, str_to_date(%s,%s), %s)" \
+                    ,(items[6], items[4], items[3], int(items[9]), items[7], items[0], items[8], "%Y-%m-%e %H:%i:%s", items[1]))
+        mariadb.commit()
         
     def update_company_list(self):
         self.companyList.clear()
