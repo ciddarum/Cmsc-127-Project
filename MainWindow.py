@@ -236,6 +236,9 @@ class Ui_MainWindow(object):
         self.searchBy.addItem(_fromUtf8(""))
         self.searchBy.addItem(_fromUtf8(""))
         self.searchBy.addItem(_fromUtf8(""))
+        self.pushButton = QtGui.QPushButton(self.searchJobs)
+        self.pushButton.setGeometry(QtCore.QRect(600, 10, 51, 31))
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
         self.stackedWidget.addWidget(self.searchJobs)
         self.viewJobsApplied = QtGui.QPushButton(self.jobSeeker)
         self.viewJobsApplied.setGeometry(QtCore.QRect(160, 0, 121, 71))
@@ -317,7 +320,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.index.setCurrentIndex(4)
+        self.index.setCurrentIndex(3)
         self.stackedWidget.setCurrentIndex(1)
         self.stackedWidget_2.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -369,6 +372,7 @@ class Ui_MainWindow(object):
         self.searchBy.setItemText(0, _translate("MainWindow", "Jobtitle", None))
         self.searchBy.setItemText(1, _translate("MainWindow", "Industry", None))
         self.searchBy.setItemText(2, _translate("MainWindow", "JLevel", None))
+        self.pushButton.setText(_translate("MainWindow", "Apply", None))
         self.viewJobsApplied.setText(_translate("MainWindow", "View Jobs\n"
 "Applied", None))
         self.editAcc.setText(_translate("MainWindow", "Edit Account", None))

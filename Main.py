@@ -63,7 +63,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.searchJobs_2.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(1))
         self.searchButton.clicked.connect(lambda:self.search(self.jobList, self.searchBy, self.searchBox))
         self.searchButton_2.clicked.connect(lambda:self.search(self.jobList_2, self.searchBy_2, self.searchBox_2))
-        
+        self.pushButton.clicked.connect(lambda:self.add_job_applied())
         
     def create_add_company(self):       
         self.company_window = add_company(self)
@@ -100,7 +100,27 @@ class main_window(QtGui.QMainWindow, mainWindow):
         #try this
     
     def add_job_applied(self):
-        print "Under Construction"
+        cursor.execute("call APPLY(%s, %s)", (self.currentUser, "%s" % self.jobList.item(index.row(), 6).text()))
+        self.update_job_list()
+        #self.jobList for the serach table
+        #self.tableOfJobs for the table of applied jobs
+        
+    def update_job_list(self):
+        tableView = self.tableOfJobs;
+        tableView.setRowCount(0)
+        tableView.setColumnCount(10)
+        
+        cursor.execute("Select * from JOB where Jobid in (Select * from APPLIES where Userid = %s)", (self.currentUser))
+        for job in cursor:
+            rowPosition = tableView.rowCount()
+            tableView.insertRow(rowPosition)
+            i=0
+            for attribute in job:
+                item = QtGui.QTableWidgetItem("%s" % job[attribute])
+                tableView.setItem(rowPosition , i, item)
+                i += 1
+            
+            
         
     def remove_job_applied(self):
         print "Under Construction"
@@ -245,6 +265,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             cursor.execute("SELECT * FROM JOBSEEKER WHERE Userid = %s"
                             ,(self.currentUser))
             if cursor.rowcount == 1: 
+                self.update_job_list()
                 self.seeker = True
                 page = 3
                 
