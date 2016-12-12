@@ -236,14 +236,14 @@ DELIMITER %%
 		END;
 
 %%
-CREATE PROCEDURE deleteUser(in Usid int(5))
-	BEGIN
+    CREATE PROCEDURE deleteUser(in Usid int(5))
+	    BEGIN
 		
-		DELETE FROM USERCONTACTNUMBER where Userid = Usid;
-		DELETE FROM USEREMAILADDRESS where Userid = Usid;
-		DELETE FROM USERS where Userid = Usid;
-	END;
-	%%
+		    DELETE FROM USERCONTACTNUMBER where Userid = Usid;
+		    DELETE FROM USEREMAILADDRESS where Userid = Usid;
+		    DELETE FROM USERS where Userid = Usid;
+	    END;
+%%
 #---DELETE JOBSEEKER----
 	CREATE PROCEDURE jsDeleteLog(in Usid int(5))
 		BEGIN
