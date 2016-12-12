@@ -20,6 +20,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.setupUi(self)
         self.passBox.setEchoMode(QtGui.QLineEdit.Password)
         self.createPassBox.setEchoMode(QtGui.QLineEdit.Password)
+        self.index.setCurrentIndex(0)
         self.update_company_list()
         self.setup_buttons()
         self.seeker = False
@@ -60,8 +61,8 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.editButton.clicked.connect(lambda: self.create_edit_self())
         self.viewJobsPosted.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(0))
         self.searchJobs_2.clicked.connect(lambda:self.stackedWidget_2.setCurrentIndex(1))
-        self.searchButton.clicked.connect(lambda:self.search())
-        self.searchButton_2.clicked.connect(lambda:self.search())
+        self.searchButton.clicked.connect(lambda:self.search(self.jobList, self.searchBy, self.searchBox))
+        self.searchButton_2.clicked.connect(lambda:self.search(self.jobList_2, self.searchBy_2, self.searchBox_2))
         
         
     def create_add_company(self):       
@@ -80,8 +81,22 @@ class main_window(QtGui.QMainWindow, mainWindow):
         self.edit_user_window.show()
         
         
-    def search(self, table, value, attribute):
-        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " = %s", (value))
+    def search(self, tableView, comboBox, textBox):
+        tableView.clear()
+        tableView.setRowCount(0)
+        tableView.setColumnCount(10)
+        attribute = "%s" % comboBox.currentText()
+        value = "%s" % textBox.text()
+        cursor.execute("SELECT * FROM JOB WHERE " + attribute + " LIKE %s AND Status = \"Available\"", (value +"%"))
+        print "SELECT * FROM JOB WHERE " + attribute + " LIKE %s AND Status = \"OPEN\""
+        for job in cursor:
+            rowPosition = tableView.rowCount()
+            tableView.insertRow(rowPosition)
+            i = 0
+            for attribute in job:
+                item = QtGui.QTableWidgetItem("%s" % job[attribute])
+                tableView.setItem(rowPosition , i, item)
+                i += 1
         #try this
     
     def add_job_applied(self):
@@ -133,6 +148,10 @@ class main_window(QtGui.QMainWindow, mainWindow):
         
     def newLogin(self):
         #add new user here then log them in
+        cursor.execute("select LAST_INSERT_ID()");
+        temp = cursor.fetchone()
+        for i in temp:
+            print i, temp[i]
         if self.seeker:
             cursor.execute("call jsInsertLog(%s)", ("%s" % self.spinBox.value()))
             
@@ -152,7 +171,7 @@ class main_window(QtGui.QMainWindow, mainWindow):
             if self.editPriv.isChecked():
                 privilage = privilage + "~"
         
-            cursor.execute("call cInsertLog(%s,%s)", (privilage, "%s" % self.companyList.currentText()))
+            cursor.execute("call cInsertLog(%s, %s)", (privilage,"%s" % self.companyList.currentText()))
         
         mariadb.commit()
         self.loginClick(self.createUserBox.text(), self.createPassBox.text())
@@ -262,11 +281,9 @@ class add_company(QtGui.QDialog, addCompany):
     def set_main(self, mainwindow):
         self.mainWindow = mainwindow
     
-    
     def setupButtons(self):
         self.pushButton.clicked.connect(lambda:self.insertInput(self.listWidget, "Company Address"))
         self.pushButton_2.clicked.connect(lambda:self.removeInput(self.listWidget))
-        
     
     def accept(self):
         #add new company here
@@ -322,7 +339,7 @@ class add_job(QtGui.QDialog, addJob):
 
         
         cursor.execute("call jobInsertLog(%s, %s, %s, %s, %s, str_to_date(%s, %s), %s, %s)" \
-                ,(industry, jobTitle, age, level, salary, date_time, "%Y-%b-%e %H:%i:%s", "OPEN", self.currentUser))
+                ,(industry, jobTitle, age, level, salary, date_time, "%Y-%b-%e %H:%i:%s", "Available", self.currentUser))
         mariadb.commit()
         self.mainWindow.update_comp_job_list()
         super(add_job, self).accept()

@@ -36,7 +36,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="loginPage">
      <widget class="QPushButton" name="createUserButton">
@@ -782,12 +782,17 @@ Posts</string>
         </property>
         <item>
          <property name="text">
-          <string>Job Name</string>
+          <string>Jobtitle</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Company</string>
+          <string>Industry</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>JLevel</string>
          </property>
         </item>
        </widget>
@@ -970,12 +975,17 @@ functionalities</string>
         </property>
         <item>
          <property name="text">
-          <string>Job Name</string>
+          <string>Jobtitle</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Company</string>
+          <string>Industry</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>JLevel</string>
          </property>
         </item>
        </widget>
