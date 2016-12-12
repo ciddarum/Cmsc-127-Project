@@ -377,16 +377,16 @@ class edit_user(QtGui.QDialog, editUser):
         self.isCompRep = False
         
     def setUpButtons(self):
-        self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number"))
+        self.addPhoneNumber.clicked.connect(lambda:self.insertInput(self.phoneNumbers,"Phone Number", "AddCNumberId"))
         self.removePhoneNumber.clicked.connect(lambda:self.removeInput(self.phoneNumbers, "USERCONTACTNUMBER", "ContactNumber"))
-        self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address"))
+        self.addEmail.clicked.connect(lambda:self.insertInput(self.emailAdds,"Email Address", "AddEmailId"))
         self.removeEmail.clicked.connect(lambda:self.removeInput(self.emailAdds, "USEREMAILADDRESS", "Emailaddress"))
-        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill"))
+        self.addSkill.clicked.connect(lambda:self.insertInput(self.skillList,"Skill", "jsAddSkillSetId"))
         self.removeSkill.clicked.connect(lambda:self.removeInput(self.skillList, "JOBSEEKERSKILLSET", "Skillset"))
         self.removeAddress.clicked.connect(lambda:self.removeInput(self.addressList, "JOBSEEKERADDRESS", "Address"))
-        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address"))
+        self.addAddress.clicked.connect(lambda:self.insertInput(self.addressList,"Address", "jsAddAddressId"))
         self.removeEduc.clicked.connect(lambda:self.removeInput(self.educList, "JSEDUCATIONALATTAINMENT", "EducationalAttainment"))
-        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment"))
+        self.addEduc.clicked.connect(lambda:self.insertInput(self.educList,"Educational attainment", "jsAddEducId"))
         self.pushButton.clicked.connect(lambda:self.delete_user())
         
     def delete_user(self):
@@ -412,12 +412,12 @@ class edit_user(QtGui.QDialog, editUser):
         self.main = mainWindow;
         self.update_information()
         
-    def insertInput(self, listView, stringRep, function, value):
+    def insertInput(self, listView, stringRep, function):
         query = "CALL " + function + "(%s, %s)"
         string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
         if ok:
             #create procedures for user decided additions
-            #cursor.execute(query, (self.currentUser, value))
+            cursor.execute(query, (self.currentUser, "%s" % string))
             listView.addItem(string)
         #add new shit here
             

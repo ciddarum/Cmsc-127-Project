@@ -213,7 +213,7 @@ DELIMITER %%
 %%
 	CREATE PROCEDURE AddCNumberId(in Usid int(5), in jsContactnumber varchar(16))
 		BEGIN
-			INSERT INTO USEREMAILADDRESS(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
+			INSERT INTO USERCONTACTNUMBER(Userid, ContactNumber) VALUES(Usid, jsContactnumber);
 		END;
 %%
 
