@@ -25,9 +25,9 @@ except AttributeError:
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
-        Dialog.resize(432, 403)
+        Dialog.resize(755, 373)
         self.buttonBox = QtGui.QDialogButtonBox(Dialog)
-        self.buttonBox.setGeometry(QtCore.QRect(70, 350, 341, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(390, 320, 341, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
@@ -67,6 +67,18 @@ class Ui_Dialog(object):
         self.dateTimeEdit = QtGui.QDateTimeEdit(Dialog)
         self.dateTimeEdit.setGeometry(QtCore.QRect(103, 310, 191, 31))
         self.dateTimeEdit.setObjectName(_fromUtf8("dateTimeEdit"))
+        self.listWidget = QtGui.QListWidget(Dialog)
+        self.listWidget.setGeometry(QtCore.QRect(475, 80, 261, 211))
+        self.listWidget.setObjectName(_fromUtf8("listWidget"))
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setGeometry(QtCore.QRect(440, 80, 31, 31))
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        self.pushButton_2.setGeometry(QtCore.QRect(440, 110, 31, 31))
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.label_7 = QtGui.QLabel(Dialog)
+        self.label_7.setGeometry(QtCore.QRect(480, 40, 68, 17))
+        self.label_7.setObjectName(_fromUtf8("label_7"))
 
         self.retranslateUi(Dialog)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
@@ -81,4 +93,7 @@ class Ui_Dialog(object):
         self.label_4.setText(_translate("Dialog", "Age requirement", None))
         self.label_5.setText(_translate("Dialog", "Deadline", None))
         self.label_6.setText(_translate("Dialog", "Salary", None))
+        self.pushButton.setText(_translate("Dialog", "+", None))
+        self.pushButton_2.setText(_translate("Dialog", "-", None))
+        self.label_7.setText(_translate("Dialog", "Skillsets", None))
 

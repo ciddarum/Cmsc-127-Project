@@ -265,16 +265,22 @@ DELIMITER %%
 		END;
 
 %%
+CREATE PROCEDURE deleteUser(in Usid int(5))
+	BEGIN
+		
+		DELETE FROM USERCONTACTNUMBER where Userid = Usid;
+		DELETE FROM USEREMAILADDRESS where Userid = Usid;
+		DELETE FROM USERS where Userid = Usid;
+	END;
+	%%
+
 	CREATE PROCEDURE jsDeleteLog(in Usid int(5))
 		BEGIN
 			
-			DELETE FROM USERCONTACTNUMBER where Userid = Usid;
-			DELETE FROM USEREMAILADDRESS where Userid = Usid;
 			DELETE FROM JOBSEEKER where Userid = Usid;
 			DELETE FROM JOBSEEKERSKILLSET where Userid = Usid;
 			DELETE FROM JOBSEEKERADDRESS where Userid = Usid;
 			DELETE FROM JSEDUCATIONALATTAINMENT where Userid = Usid;
-			DELETE FROM USERS where Userid = Usid;
 		END;
 		
 %%
@@ -292,15 +298,9 @@ DELIMITER %%
 			
 		END;
 %%
-
-#----DELETE COMPANY REP -----
 	CREATE PROCEDURE cDeleteLog(in Usid int(5))
 		BEGIN
-			DELETE FROM USERS where Userid = Usid;
-			DELETE FROM USERCONTACTNUMBER where Userid = Usid;
-			DELETE FROM USEREMAILADDRESS where Userid = Usid;
 			DELETE FROM COMPANYREP where Userid =Usid;
-			
 		END;
 		
 %%
@@ -314,7 +314,6 @@ DELIMITER %%
 			UPDATE COMPANYREP SET Privilege = cPrivilege, Companyid = (select Companyid from COMPANY where Companyname = cCompanyname), Companyname = cCompanyname where Userid = Usid;
 		END;
 	
-		
 %% 
 	CREATE PROCEDURE jobInsertLog(in ind varchar(50), in jTitle varchar(50), in areq int(2), in lev varchar(20), in sal varchar(50), in edate datetime, in status varchar(10), in Userid int(5))
 		BEGIN
@@ -323,15 +322,15 @@ DELIMITER %%
 		END;
 		
 %%
-	CREATE PROCEDURE jobAddSkillSet(in job_id int(5), in jTitle varchar(50))
+	CREATE PROCEDURE jobAddSkillSet(in job_id int(5), in jobSkillReq varchar(50))
 		BEGIN
-			INSERT INTO JOBSKILLSETREQ(Jobid, Skillsetreq) VALUES((Select Jobid from JOB where Jobid = job_id and Jobtitle = jTitle), jobSkillReq);
+			INSERT INTO JOBSKILLSETREQ(Jobid, Skillsetreq) VALUES(job_id, jobSkillReq);
 		END;	
 %%
 	
-	CREATE PROCEDURE jobDeleteLog(in job_id int(5), in jTitle varchar(50))
+	CREATE PROCEDURE jobDeleteLog(in job_id int(5))
 		BEGIN
-			DELETE FROM JOB where Jobtitle = jTitle and Jobid = job_id;
+			DELETE FROM JOB where Jobid = job_id;
 			DELETE FROM JOBSKILLSETREQ WHERE Jobid = job_id;
 		END;
 		
