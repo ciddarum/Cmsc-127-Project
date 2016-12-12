@@ -412,12 +412,12 @@ class edit_user(QtGui.QDialog, editUser):
         self.main = mainWindow;
         self.update_information()
         
-    def insertInput(self, listView, stringRep, function, value):
+    def insertInput(self, listView, stringRep, function):
         query = "CALL " + function + "(%s, %s)"
         string, ok = QtGui.QInputDialog.getText(QtGui.QWidget(), 'Text Input Dialog', 'Enter %s:' % stringRep)
         if ok:
             #create procedures for user decided additions
-            #cursor.execute(query, (self.currentUser, value))
+            cursor.execute(query, (self.currentUser, string))
             listView.addItem(string)
         #add new shit here
             
